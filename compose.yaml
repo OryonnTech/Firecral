@@ -1,0 +1,53 @@
+# Projeto Docker próprio: "firecrawl-mcp". Não publica porta: só o Traefik chega, pela rede borda-firecrawl.
+# Rede própria de propósito: o contêiner abre sites da internet, então não fica na rede de nenhum outro
+# sistema (Controle, Omie, bancos). O Firecrawl Local também recusa endereços internos.
+name: firecrawl-mcp
+services:
+  firecrawl-mcp:
+    image: ghcr.io/oryonntech/firecrawl-mcp:${VERSAO:-v1.0.0}
+    restart: unless-stopped
+    env_file: .env
+    # environment vence o env_file: estas travas não mudam por engano no .env.
+    environment:
+      FIRECRAWL_CLOUD: "off"
+      SUBIR_FIRECRAWL_LOCAL: "true"
+      FIRECRAWL_LOCAL_BROWSER: auto
+    read_only: true
+    tmpfs: ["/tmp:size=512m"]
+    shm_size: 256m
+    # Chrome mantém o sandbox ligado; precisa deste perfil (o padrão do Docker bloqueia clone/unshare/setns).
+    # Perfil publicado pelo Playwright (microsoft/playwright, utils/docker/seccomp_profile.json). NUNCA "unconfined".
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=./seccomp_chrome.json
+    cap_drop: [ALL]
+    # SYS_CHROOT só no conjunto-limite: o processo roda sem nenhuma capacidade efetiva, mas o sandbox do
+    # Chrome precisa dela dentro do user namespace que ele cria (sem ela: "Zygote process exited prematurely").
+    cap_add: [SYS_CHROOT]
+    mem_limit: 1g
+    cpus: 1.0
+    pids_limit: 512
+    networks: [borda]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: borda-firecrawl
+      traefik.http.routers.firecrawl-mcp.rule: Host(`${MCP_PUBLIC_HOST}`) && (PathPrefix(`/mcp`) || PathPrefix(`/.well-known/oauth-protected-resource`))
+      traefik.http.routers.firecrawl-mcp.entrypoints: websecure
+      traefik.http.routers.firecrawl-mcp.tls: "true"
+      traefik.http.routers.firecrawl-mcp.tls.certresolver: letsencrypt
+      traefik.http.routers.firecrawl-mcp.middlewares: firecrawl-mcp-cloudflare@docker,firecrawl-mcp-protecao@docker,firecrawl-mcp-limite@docker,firecrawl-mcp-corpo@docker
+      # Só a Cloudflare chega aqui; no fim, 127.0.0.1 e redes do Docker = teste da esteira de dentro da VPS. NÃO tire.
+      traefik.http.middlewares.firecrawl-mcp-cloudflare.ipallowlist.sourcerange: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22,2400:cb00::/32,2606:4700::/32,2803:f800::/32,2405:b500::/32,2405:8100::/32,2a06:98c0::/29,2c0f:f248::/32,127.0.0.1/32,172.16.0.0/12,192.168.0.0/16"
+      traefik.http.middlewares.firecrawl-mcp-protecao.headers.stsSeconds: "31536000"
+      traefik.http.middlewares.firecrawl-mcp-protecao.headers.contentTypeNosniff: "true"
+      traefik.http.middlewares.firecrawl-mcp-protecao.headers.frameDeny: "true"
+      traefik.http.middlewares.firecrawl-mcp-limite.ratelimit.average: "60"
+      traefik.http.middlewares.firecrawl-mcp-limite.ratelimit.burst: "30"
+      traefik.http.middlewares.firecrawl-mcp-limite.ratelimit.period: 1m
+      traefik.http.middlewares.firecrawl-mcp-limite.ratelimit.sourcecriterion.requestheadername: CF-Connecting-IP
+      traefik.http.middlewares.firecrawl-mcp-corpo.buffering.maxRequestBodyBytes: "262144"
+      traefik.http.services.firecrawl-mcp.loadbalancer.server.port: "8766"
+networks:
+  borda:
+    external: true
+    name: borda-firecrawl
