@@ -21,6 +21,9 @@ services:
       - no-new-privileges:true
       - seccomp=./seccomp_chrome.json
     cap_drop: [ALL]
+    # SYS_CHROOT só no conjunto-limite: o processo roda sem nenhuma capacidade efetiva, mas o sandbox do
+    # Chrome precisa dela dentro do user namespace que ele cria (sem ela: "Zygote process exited prematurely").
+    cap_add: [SYS_CHROOT]
     mem_limit: 1g
     cpus: 1.0
     pids_limit: 512

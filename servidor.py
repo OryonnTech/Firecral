@@ -343,7 +343,7 @@ def subir_motor() -> subprocess.Popen:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s", force=True)
     if SUBIR_MOTOR:
         subir_motor()
     uvicorn.run(

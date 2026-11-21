@@ -21,7 +21,7 @@ Não faz busca na web, extração estruturada (json/summary), agent nem monitore
 - **Login por pessoa** (Keycloak `auth-ecosan`, realm `mcp`, papel `firecrawl-leitura`) ou token fixo de 32+ caracteres. Mesmo portão do `omie-mcp`.
 - **Só leitura**: as três ferramentas têm `readOnlyHint`; não há gravação em nenhum sistema.
 - **Contêiner**: sem porta publicada, rede própria `borda-firecrawl` (só o Traefik), só Cloudflare chega (ipallowlist), limite de pedidos no Traefik e 30 leituras/min por pessoa, `read_only`, `cap_drop: ALL`, `no-new-privileges`, 1 GB/1 CPU, usuário sem privilégio.
-- **Chrome com sandbox**: precisa do perfil seccomp `seccomp_chrome.json` (cópia do perfil do Playwright, `microsoft/playwright/utils/docker/seccomp_profile.json`, baixado em 21/11/2026, sha256 `cc3e61ca…7849`). Nunca usar `seccomp=unconfined`.
+- **Chrome com sandbox**: precisa do perfil seccomp `seccomp_chrome.json` (cópia do perfil do Playwright, `microsoft/playwright/utils/docker/seccomp_profile.json`, baixado em 21/11/2026, sha256 `cc3e61ca…7849`). Nunca usar `seccomp=unconfined`. Precisa também de `cap_add: [SYS_CHROOT]` (só no conjunto-limite: o processo continua com zero capacidades efetivas; o Chrome usa dentro do próprio user namespace).
 - **Registro**: cada uso grava quem, quando, ferramenta e o domínio lido. Nunca o conteúdo.
 - O conteúdo devolvido vem marcado como dado de terceiros, nunca instrução.
 - Avisos de segurança conhecidos do Firecrawl (RCE/SSRF de 2024-2026) são do servidor completo `apps/api`, que **não** usamos.
