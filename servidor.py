@@ -261,12 +261,14 @@ mcp.settings.transport_security = TransportSecuritySettings(
 app_mcp = mcp.streamable_http_app()
 _ESPERADO = f"Bearer {TOKEN}".encode() if TOKEN else None
 ROTAS_METADADOS = ("/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp")
+CABECALHOS_JWKS = {"User-Agent": "firecrawl-mcp/1.0 (+https://mcp-firecrawl.oryonntech.com)"}
 _jwks: list[jwt.PyJWKClient] = []
 
 
 def validar_token(token: str) -> dict:
     if not _jwks:
-        _jwks.append(jwt.PyJWKClient(JWKS_URL, cache_keys=True, lifespan=3600, timeout=10))
+        # User-Agent próprio: a Cloudflare do auth-ecosan devolve 403 ao padrão "Python-urllib" (22/11/2026).
+        _jwks.append(jwt.PyJWKClient(JWKS_URL, cache_keys=True, lifespan=3600, timeout=10, headers=CABECALHOS_JWKS))
     chave = _jwks[0].get_signing_key_from_jwt(token).key
     return jwt.decode(
         token, chave, algorithms=["RS256"], audience=RECURSO, issuer=EMISSOR,
