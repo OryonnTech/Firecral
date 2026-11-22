@@ -119,3 +119,26 @@ def test_motor_sobe_sem_nuvem_e_sem_rede_privada(monkeypatch):
     assert "FIRECRAWL_LOCAL_ALLOW_PRIVATE" not in capturado["env"]
     assert "--allow-private" not in capturado["cmd"]
     assert capturado["cmd"][capturado["cmd"].index("--host") + 1] == "127.0.0.1"
+
+
+def test_jwks_usa_user_agent_proprio(monkeypatch):
+    # A Cloudflare do login recusa (403) o User-Agent padrão "Python-urllib".
+    import servidor
+    capturado = {}
+
+    class Falso:
+        def __init__(self, uri, **kw):
+            capturado.update(kw)
+
+        def get_signing_key_from_jwt(self, token):
+            raise servidor.jwt.PyJWKClientError("parar aqui")
+
+    monkeypatch.setattr(servidor.jwt, "PyJWKClient", Falso)
+    servidor._jwks.clear()
+    try:
+        servidor.validar_token("x.y.z")
+    except servidor.jwt.PyJWKClientError:
+        pass
+    servidor._jwks.clear()
+    ua = capturado.get("headers", {}).get("User-Agent", "")
+    assert ua and "python-urllib" not in ua.lower()
