@@ -29,12 +29,12 @@ Não faz busca na web, extração estruturada (json/summary), agent nem monitore
 ## Versões fixas
 
 - Firecrawl Local: commit `e6c2ffdf7072fe9ab72eefa59622454f7480e163` (versão 0.1.1), o mesmo testado na VPS de pré-produção e no notebook em 21/11/2026.
-- Rust `1.100.0-slim-trixie` e Python `3.12.15-slim-trixie` por digest; dependências Python em `requirements.txt`.
+- Rust `1.100.0-slim-trixie` e Python `3.12.15-slim-trixie` por digest; dependências Python em `requirements.txt` (fonte), travadas com hash em `requirements.lock` (imagem) e `requirements-dev.lock` (testes e CI, o de produção mais o pytest); o comando para regenerar está no topo de cada lock.
 
 ## Testar
 
 ```bash
-pip install -r requirements.txt -r requirements-dev.txt
+pip install --require-hashes --no-deps -r requirements-dev.lock
 python -m pytest -q
 ```
 
