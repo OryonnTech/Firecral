@@ -19,8 +19,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends chromium fonts-
  && rm -rf /var/lib/apt/lists/* \
  && useradd --system --create-home --home-dir /app firecrawl
 COPY --from=motor /firecrawl-local /usr/local/bin/firecrawl-local
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Dependências só pelo lock com hash (inclui as indiretas). Fonte: requirements.txt.
+COPY requirements.lock /app/requirements.lock
+RUN pip install --no-cache-dir --require-hashes --no-deps -r /app/requirements.lock
 USER firecrawl
 WORKDIR /app
 COPY --chown=firecrawl:firecrawl servidor.py /app/
