@@ -13,7 +13,7 @@ RUN cd firecrawl/apps/local && cargo build --release --locked \
  && cp target/release/firecrawl-local /firecrawl-local
 
 # Estágio 2: só o necessário para rodar.
-FROM python:3.12.15-slim-trixie@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
+FROM python:3.12.16-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 RUN apt-get update && apt-get install -y --no-install-recommends chromium fonts-liberation ca-certificates \
  && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
