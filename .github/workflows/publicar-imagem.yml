@@ -58,7 +58,7 @@ jobs:
       - name: Montar a imagem (sem publicar)
         run: docker build --pull -f Dockerfile -t "$IMAGEM_TESTE" .
       - name: Conferir que a imagem abre
-        run: docker run --rm -e MCP_PUBLIC_HOST=teste.invalid -e MCP_ACCESS_TOKEN=0123456789abcdef0123456789abcdef "$IMAGEM_TESTE" sh -c 'chromium --version && test -x /usr/local/bin/firecrawl-local && python3 -c "import servidor; print(1)"'
+        run: docker run --rm -e MCP_PUBLIC_HOST=teste.invalid -e MCP_ACCESS_TOKEN="$(head -c 24 /dev/urandom | base64)" "$IMAGEM_TESTE" sh -c 'chromium --version && test -x /usr/local/bin/firecrawl-local && python3 -c "import servidor; print(1)"'
       - name: Apagar a imagem de teste (runner da pré-prod não é descartável)
         if: always()
         run: docker rmi -f "$IMAGEM_TESTE" >/dev/null 2>&1 || true
