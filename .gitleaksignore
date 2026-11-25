@@ -1,0 +1,3 @@
+# Falso positivo aprovado pelo dono em 25/11/2026: token fictício do teste de imagem no CI
+# (já trocado por um valor gerado na hora). Não é segredo real.
+4f69be94f1649a80f62cb6e7955d7cbfd3142d9f:.github/workflows/publicar-imagem.yml:generic-api-key:61
