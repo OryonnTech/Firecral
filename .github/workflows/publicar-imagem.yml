@@ -43,6 +43,26 @@ jobs:
       - run: python -m pip install -q --require-hashes --no-deps -r requirements-dev.lock
       - run: python -m pytest -q
 
+  montar-imagem:
+    # PR e disparo manual montam a imagem inteira (com o apt e os downloads), sem publicar.
+    # Assim um erro no Dockerfile aparece antes da tag. Só a tag de versão publica.
+    if: github.event_name != 'push'
+    runs-on: [self-hosted, linux, preprod]
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      IMAGEM_TESTE: teste-pr-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Montar a imagem (sem publicar)
+        run: docker build --pull -f Dockerfile -t "$IMAGEM_TESTE" .
+      - name: Conferir que a imagem abre
+        run: docker run --rm -e MCP_PUBLIC_HOST=teste.invalid -e MCP_ACCESS_TOKEN="$(head -c 24 /dev/urandom | base64)" "$IMAGEM_TESTE" sh -c 'chromium --version && test -x /usr/local/bin/firecrawl-local && python3 -c "import servidor; print(1)"'
+      - name: Apagar a imagem de teste (runner da pré-prod não é descartável)
+        if: always()
+        run: docker rmi -f "$IMAGEM_TESTE" >/dev/null 2>&1 || true
+
   imagem:
     needs: [testes, segredos]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
